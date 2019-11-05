@@ -9,7 +9,7 @@ time_table_drop = "drop table if exists time"
 # CREATE TABLES
 
 songplay_table_create = ("""
-	create table if not exists songplays (songplay_id varchar PRIMARY KEY, start_time bigint, user_id int, level varchar, song_id varchar, artist_id varchar, session_id int, location varchar, user_agent varchar)
+	create table if not exists songplays (songplay_id serial PRIMARY KEY, start_time timestamp without time zone, user_id int NOT NULL, level varchar, song_id varchar, artist_id varchar, session_id int, location varchar, user_agent varchar)
 """)
 
 user_table_create = ("""
@@ -17,7 +17,7 @@ user_table_create = ("""
 """)
 
 song_table_create = ("""
-	create table if not exists songs (song_id varchar, title varchar, artist_id varchar, year int, duration numeric, PRIMARY KEY (song_id, artist_id))
+	create table if not exists songs (song_id varchar PRIMARY KEY, title varchar, artist_id varchar, year int, duration numeric)
 """)
 
 artist_table_create = ("""
@@ -25,24 +25,24 @@ artist_table_create = ("""
 """)
 
 time_table_create = ("""
-	create table if not exists time (start_time bigint PRIMARY KEY, hour int, day int, week int, month int, year int, weekday int)
+	create table if not exists time (start_time timestamp without time zone PRIMARY KEY, hour int, day int, week int, month int, year int, weekday int)
 """)
 
 # INSERT RECORDS
 
 songplay_table_insert = ("""
-	insert into songplays(songplay_id, start_time, user_id, level, song_id, artist_id, session_id, location, user_agent) values (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+	insert into songplays(start_time, user_id, level, song_id, artist_id, session_id, location, user_agent) values (%s, %s, %s, %s, %s, %s, %s, %s)
 """)
 
 song_table_insert = ("""
 	insert into songs(song_id, title, artist_id, year, duration) values (%s, %s, %s, %s, %s)
-	ON CONFLICT (song_id, artist_id) DO NOTHING
+	ON CONFLICT (song_id) DO NOTHING
 """)
 
 
 user_table_insert = ("""
 	insert into users(user_id, first_name, last_name, gender, level) values (%s, %s, %s, %s, %s)
-	ON CONFLICT (user_id) DO NOTHING
+	ON CONFLICT (user_id) DO UPDATE SET (first_name, last_name, gender, level) = (EXCLUDED.first_name, EXCLUDED.last_name, EXCLUDED.gender, EXCLUDED.level)
 """)
 
 

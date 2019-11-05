@@ -6,6 +6,17 @@ from sql_queries import *
 import numpy as np
 
 def process_song_file(cur, filepath):
+    """
+    Description: This function is used to read files under filepath (data/song_data) and insert data into songs and artists tables. 
+
+    Arguments:
+        cur: a cursor object. 
+        filepath: song data file path. 
+
+    Returns:
+        None
+    """
+
     # open song file
     df = pd.read_json(filepath, lines=True)
 
@@ -20,6 +31,17 @@ def process_song_file(cur, filepath):
 
 
 def process_log_file(cur, filepath):
+    """
+    Description: This function is used to read files in filepath (data/log_data) and insert data into users, time, songplays tables. 
+
+    Arguments:
+        cur: a cursor object. 
+        filepath: log data file path. 
+
+    Returns:
+        None
+    """
+
     # open log file
     df = pd.read_json(filepath, lines=True)
 
@@ -30,7 +52,6 @@ def process_log_file(cur, filepath):
     t = pd.to_datetime(df.ts, unit='ms')
     
     # insert time data records
-    timestamps = df.ts.values
     hours = t.dt.hour.values
     days = t.dt.day.values
     weeks = t.dt.week.values
@@ -39,7 +60,7 @@ def process_log_file(cur, filepath):
     weekdays = t.dt.weekday.values
 
     dic = {
-           'start_time': timestamps, 
+           'start_time': t, 
            'hour': hours, 
            'day': days, 
            'week': weeks, 
@@ -72,12 +93,26 @@ def process_log_file(cur, filepath):
             songid, artistid = None, None
 
         # insert songplay record
-        songplay_data = (str(row.ts)+'-'+str(row.userId), row.ts, row.userId, row.level, songid, artistid, row.sessionId, row.location, row.userAgent)
+        datetime_without_timezone = pd.to_datetime(row.ts, unit='ms')
+        songplay_data = (datetime_without_timezone, row.userId, row.level, songid, artistid, row.sessionId, row.location, row.userAgent)
         cur.execute(songplay_table_insert, songplay_data)
 
         
 
 def process_data(cur, conn, filepath, func):
+    """
+    Description: This function is used to get all files under filepath and execute function func to process each file. 
+
+    Arguments:
+        cur: a cursor object. 
+        conn: a connection object
+        filepath: a file path
+        func: a function to process file
+
+    Returns:
+        None
+    """
+
     # get all files matching extension from directory
     all_files = []
     for root, dirs, files in os.walk(filepath):
@@ -92,12 +127,12 @@ def process_data(cur, conn, filepath, func):
     # iterate over files and process
     for i, datafile in enumerate(all_files, 1):
         func(cur, datafile)
-        conn.commit()
         print('{}/{} files processed.'.format(i, num_files))
 
 
 def main():
     conn = psycopg2.connect("host=127.0.0.1 dbname=sparkifydb user=student password=student")
+    conn.set_session(autocommit=True)
     cur = conn.cursor()
 
     process_data(cur, conn, filepath='data/song_data', func=process_song_file)
